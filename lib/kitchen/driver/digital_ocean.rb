@@ -149,10 +149,14 @@ module Kitchen
           res = RestClient.send(method.to_sym, url, headers)
           json = JSON.parse(res) unless res.empty?
 
-          if json['links'] && json['links']['pages'] && json['links']['pages']['next']
-            json.deep_merge!(api_request(method, json['links']['pages']['next']))
+          if json
+            if json['links'] && json['links']['pages'] && json['links']['pages']['next']
+              json.deep_merge!(api_request(method, json['links']['pages']['next']))
+            else
+              json
+            end
           else
-            json
+            ""
           end
         elsif %w(post put).include? method.to_s
           begin
