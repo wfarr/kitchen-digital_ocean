@@ -3,6 +3,7 @@
 # Author:: Greg Fitzgerald (<greg@gregf.org>)
 #
 # Copyright (C) 2013, Greg Fitzgerald
+# Copyright (C) 2014, Will Farrington
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +17,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'benchmark'
-require 'fog'
+require 'rest_client'
+require 'json'
 require 'kitchen'
 require 'etc'
 require 'socket'
@@ -28,22 +29,23 @@ module Kitchen
     #
     # @author Greg Fitzgerald <greg@gregf.org>
     class Digitalocean < Kitchen::Driver::SSHBase
+      IMAGES = {
+        "ubuntu-12.04": "ubuntu-12-04-x64",
+        "ubuntu-14.04": "ubuntu-14-04-x64",
+      }
+
       default_config :username, 'root'
       default_config :port, '22'
+      default_config
 
       default_config :private_networking do
         true
       end
 
-      default_config :region_id do |driver|
-        driver.default_region
-      end
+      default_config :region, 'nyc2'
+      default_config :size, '2gb'
 
-      default_config :flavor_id do |driver|
-        driver.default_flavor
-      end
-
-      default_config :image_id do |driver|
+      default_config :image do |driver|
         driver.default_image
       end
 
@@ -51,60 +53,47 @@ module Kitchen
         driver.default_name
       end
 
-      default_config :digitalocean_client_id do
-        ENV['DIGITALOCEAN_CLIENT_ID']
+      default_config :digitalocean_api_token do
+        ENV['DIGITALOCEAN_API_TOKEN']
       end
 
-      default_config :digitalocean_api_key do
-        ENV['DIGITALOCEAN_API_KEY']
+      default_config :ssh_keys do
+        ENV['DIGITALOCEAN_SSH_KEYS']
       end
 
-      default_config :ssh_key_ids do
-        ENV['DIGITALOCEAN_SSH_KEY_IDS'] || ENV['SSH_KEY_IDS']
-      end
-
-      required_config :digitalocean_client_id
-      required_config :digitalocean_api_key
+      required_config :digitalocean_api_token
       required_config :ssh_key_ids
 
       def create(state)
-        server = create_server
-        state[:server_id] = server.id
+        droplet = create_droplet
+        state[:server_id] = droplet.id
 
         info("Digital Ocean instance <#{state[:server_id]}> created.")
+
         server.wait_for { print '.'; ready? } ; print '(server ready)'
         state[:hostname] = server.public_ip_address
+
         wait_for_sshd(state[:hostname]) ; print "(ssh ready)\n"
         debug("digitalocean:create #{state[:hostname]}")
-      rescue Fog::Errors::Error, Excon::Errors::Error => ex
-        raise ActionFailed, ex.message
+      rescue  RestClient::Exception => e
+        raise ActionFailed, e.message
       end
 
       def destroy(state)
         return if state[:server_id].nil?
 
-        server = compute.servers.get(state[:server_id])
-        server.destroy unless server.nil?
+        if get_droplet(state[:server_id])
+          destroy_droplet state[:server_id]
+        end
+
         info("Digital Ocean instance <#{state[:server_id]}> destroyed.")
+
         state.delete(:server_id)
         state.delete(:hostname)
       end
 
-      def default_flavor
-        flavor = config[:flavor] ? config[:flavor].upcase : nil
-        data['flavors'].fetch(flavor) { '66' }
-      end
-
-      def default_region
-        regions = {}
-        data['regions'].each_pair do |key, value|
-          regions[key.upcase] = value
-        end
-        regions.fetch(config[:region] ? config[:region].upcase : nil) { '4' }
-      end
-
       def default_image
-        data['images'].fetch(instance.platform.name) { '473123' }
+        IMAGES.fetch(instance.platform.name) { 'ubuntu-14-04-x64' }
       end
 
       def default_name
@@ -118,42 +107,30 @@ module Kitchen
 
       private
 
-      def compute
-        debug_compute_config
+      def get_droplet(id)
+        api_request :get, "droplets/#{id}")['droplet']
+      rescue  RestClient::Exception => e
+        nil
+      end
 
-        server_def = {
-          provider:               'Digitalocean',
-          digitalocean_api_key:   config[:digitalocean_api_key],
-          digitalocean_client_id: config[:digitalocean_client_id]
+      def create_droplet
+        debug_droplet_config
+
+        api_request :post, 'droplets', {
+          name: config[:server_name],
+          region: config[:region],
+          size: config[:size],
+          image: config[:image],
+          ssh_keys: config[:ssh_keys].split(','),
         }
-
-        Fog::Compute.new(server_def)
       end
 
-      def create_server
-        debug_server_config
-
-        compute.servers.create(
-          name:               config[:server_name],
-          image_id:           config[:image_id],
-          flavor_id:          config[:flavor_id],
-          region_id:          config[:region_id],
-          ssh_key_ids:        config[:ssh_key_ids],
-          private_networking: config[:private_networking]
-        )
+      def destroy_droplet(id)
+        api_request :delete, "droplets/#{id}"
       end
 
-      def data
-        @data ||= begin
-          json_file = File.expand_path(
-            File.join(%w(.. .. .. .. data digitalocean.json)),
-            __FILE__
-          )
-          JSON.load(IO.read(json_file))
-        end
-      end
-
-      def debug_server_config
+      def debug_droplet_config
+        debug("digitalocean_api_token #{config[:digitalocean_api_token]}")
         debug("digitalocean:name #{config[:server_name]}")
         debug("digitalocean:image_id #{config[:image_id]}")
         debug("digitalocean:flavor_id #{config[:flavor_id]}")
@@ -162,10 +139,29 @@ module Kitchen
         debug("digitalocean:private_networking #{config[:private_networking]}")
       end
 
-      def debug_compute_config
-        debug("digitalocean_api_key #{config[:digitalocean_api_key]}")
-        debug("digitalocean_client_id #{config[:digitalocean_client_id]}")
+      def api_request(method, url, content=nil)
+        url = "https://api.digitalocean.com/v2/#{url}" unless url =~ /^http/
+        headers = {'Authorization' => "Bearer #{ENV['DO_API_TOKEN']}"}
+        if %w(get head delete).include? method.to_s
+          res = RestClient.send(method.to_sym, url, headers)
+          json = JSON.parse(res) unless res.empty?
+
+          if json['links'] && json['links']['pages'] && json['links']['pages']['next']
+            json.deep_merge!(api_request(method, json['links']['pages']['next']))
+          else
+            json
+          end
+        elsif %w(post put).include? method.to_s
+          begin
+            JSON.parse(RestClient.send(method.to_sym, url, content, headers.merge(:content_type => 'application/json')))
+          rescue RestClient::Exception => rce
+            raise rce
+          end
+        else
+          raise "What kind of HTTP method actually is #{method}"
+        end
       end
+
     end
   end
 end
