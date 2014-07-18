@@ -28,7 +28,7 @@ module Kitchen
     # Digital Ocean driver for Kitchen.
     #
     # @author Greg Fitzgerald <greg@gregf.org>
-    class Digitalocean < Kitchen::Driver::SSHBase
+    class DigitalOcean < Kitchen::Driver::SSHBase
       IMAGES = {
         "ubuntu-12.04" => "ubuntu-12-04-x64",
         "ubuntu-14.04" => "ubuntu-14-04-x64",
