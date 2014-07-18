@@ -30,8 +30,8 @@ module Kitchen
     # @author Greg Fitzgerald <greg@gregf.org>
     class Digitalocean < Kitchen::Driver::SSHBase
       IMAGES = {
-        "ubuntu-12.04": "ubuntu-12-04-x64",
-        "ubuntu-14.04": "ubuntu-14-04-x64",
+        "ubuntu-12.04" => "ubuntu-12-04-x64",
+        "ubuntu-14.04" => "ubuntu-14-04-x64",
       }
 
       default_config :username, 'root'
@@ -87,6 +87,8 @@ module Kitchen
 
         state.delete(:server_id)
         state.delete(:hostname)
+      rescue  RestClient::Exception => e
+        raise ActionFailed, e.message
       end
 
       def default_image
@@ -105,8 +107,8 @@ module Kitchen
       private
 
       def get_droplet(id)
-        api_request :get, "droplets/#{id}")['droplet']
-      rescue  RestClient::Exception => e
+        api_request(:get, "droplets/#{id}")['droplet']
+      rescue RestClient::Exception => e
         nil
       end
 
