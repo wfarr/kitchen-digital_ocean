@@ -59,7 +59,7 @@ module Kitchen
       end
 
       required_config :digitalocean_api_token
-      required_config :ssh_key_ids
+      required_config :ssh_keys
 
       def create(state)
         droplet = create_droplet
