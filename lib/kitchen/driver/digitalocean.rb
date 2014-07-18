@@ -140,7 +140,7 @@ module Kitchen
 
       def api_request(method, url, content=nil)
         url = "https://api.digitalocean.com/v2/#{url}" unless url =~ /^http/
-        headers = {'Authorization' => "Bearer #{ENV['DO_API_TOKEN']}"}
+        headers = {'Authorization' => "Bearer #{config[:digitalocean_api_token]}"}
         if %w(get head delete).include? method.to_s
           res = RestClient.send(method.to_sym, url, headers)
           json = JSON.parse(res) unless res.empty?
