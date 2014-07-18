@@ -67,10 +67,15 @@ module Kitchen
 
         info("Digital Ocean instance <#{state[:server_id]}> created.")
 
-        sleep 10 until droplet = get_droplet(state[:server_id]) \
-          && droplet['networks'] \
-          && droplet['networks']['v4'] \
-          && droplet['networks']['v4'].any? { |n| n['type'] == 'public' }
+        while true
+          sleep 10
+          droplet = get_droplet(state[:server_id])
+
+          break if droplet \
+            && droplet['networks'] \
+            && droplet['networks']['v4'] \
+            && droplet['networks']['v4'].any? { |n| n['type'] == 'public' }
+        end
 
         state[:hostname] = droplet['networks']['v4'].detect { |n| n['type'] == 'public' }['ip_address']
 
