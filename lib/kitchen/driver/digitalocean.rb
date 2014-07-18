@@ -63,14 +63,18 @@ module Kitchen
 
       def create(state)
         droplet = create_droplet
-        state[:server_id] = droplet.id
+        state[:server_id] = droplet['id']
 
         info("Digital Ocean instance <#{state[:server_id]}> created.")
 
-        server.wait_for { print '.'; ready? } ; print '(server ready)'
-        state[:hostname] = server.public_ip_address
+        sleep 30
+
+        sleep 10 until droplet = get_droplet(state[:server_id])
+
+        state[:hostname] = droplet['networks']['v4'].select { |n| n['type'] == 'public' }.first['ip_address']
 
         wait_for_sshd(state[:hostname]) ; print "(ssh ready)\n"
+
         debug("digitalocean:create #{state[:hostname]}")
       rescue  RestClient::Exception => e
         raise ActionFailed, e.message
