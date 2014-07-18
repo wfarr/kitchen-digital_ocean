@@ -119,13 +119,15 @@ module Kitchen
       def create_droplet
         debug_droplet_config
 
-        api_request :post, 'droplets', {
+        droplet = api_request :post, 'droplets', {
           name: config[:server_name],
           region: config[:region],
           size: config[:size],
           image: config[:image],
           ssh_keys: config[:ssh_keys].split(','),
         }
+
+        droplet['droplet']
       end
 
       def destroy_droplet(id)
