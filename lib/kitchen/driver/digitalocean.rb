@@ -36,11 +36,8 @@ module Kitchen
 
       default_config :username, 'root'
       default_config :port, '22'
-      default_config
 
-      default_config :private_networking do
-        true
-      end
+      default_config :private_networking, true
 
       default_config :region, 'nyc2'
       default_config :size, '2gb'
