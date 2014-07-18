@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = 'kitchen-digitalocean2'
-  spec.version       = '0.1.8'
+  spec.version       = '0.2.0'
   spec.authors       = ['Will Farrington', 'Greg Fitzgerald']
   spec.email         = ['wfarr@digitalocean.com']
   spec.description   = 'A Test Kitchen Driver for Digital Ocean using apiv2'
