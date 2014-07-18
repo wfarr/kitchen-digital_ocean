@@ -67,9 +67,12 @@ module Kitchen
 
         info("Digital Ocean instance <#{state[:server_id]}> created.")
 
-        sleep 10 until droplet = get_droplet(state[:server_id])['networks']['v4']
+        sleep 10 until droplet = get_droplet(state[:server_id]) \
+          && droplet['networks'] \
+          && droplet['networks']['v4'] \
+          && droplet['networks']['v4'].any? { |n| n['type'] == 'public' }
 
-        state[:hostname] = droplet['networks']['v4'].select { |n| n['type'] == 'public' }.first['ip_address']
+        state[:hostname] = droplet['networks']['v4'].detect { |n| n['type'] == 'public' }['ip_address']
 
         wait_for_sshd(state[:hostname]) ; print "(ssh ready)\n"
 
