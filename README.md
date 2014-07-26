@@ -27,7 +27,7 @@ In your `.kitchen.yml` or `.kitchen.local.yml`:
 ``` yaml
 ---
 driver:
-  name: digitalocean
+  name: digital_ocean
 
 platforms:
   - name: ubuntu-12.10
