@@ -1,25 +1,22 @@
 # coding: utf-8
-lib = File.expand_path('../lib', __FILE__)
-$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'kitchen/driver/digitalocean_version'
 
 Gem::Specification.new do |spec|
-  spec.name          = 'kitchen-digitalocean'
-  spec.version       = Kitchen::Driver::DIGITALOCEAN_VERSION
-  spec.authors       = ['Greg Fitzgerald']
-  spec.email         = ['greg@gregf.org']
-  spec.description   = 'A Test Kitchen Driver for Digital Ocean'
+  spec.name          = 'kitchen-digitalocean2'
+  spec.version       = '0.2.2'
+  spec.authors       = ['Will Farrington', 'Greg Fitzgerald']
+  spec.email         = ['wfarr@digitalocean.com']
+  spec.description   = 'A Test Kitchen Driver for Digital Ocean using apiv2'
   spec.summary       = spec.description
-  spec.homepage      = 'https://github.com/test-kitchen/kitchen-digitalocean'
+  spec.homepage      = 'https://github.com/wfarr/kitchen-digitalocean'
   spec.license       = 'Apache 2.0'
 
   spec.files         = `git ls-files`.split($INPUT_RECORD_SEPARATOR)
-  spec.executables    = []
-  spec.test_files    = spec.files.grep(/^(test|spec|features)/)
+  spec.executables   = []
+  spec.test_files    = []
   spec.require_paths = ['lib']
 
   spec.add_dependency 'test-kitchen', '~> 1.0'
-  spec.add_dependency 'fog'
+  spec.add_dependency 'rest_client'
 
   spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'rake'
