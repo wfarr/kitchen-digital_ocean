@@ -108,10 +108,16 @@ module Kitchen
       def default_name
         # Generate what should be a unique server name
         rand_str = Array.new(8) { rand(36).to_s(36) }.join
-        "#{instance.name}-"\
-        "#{Etc.getlogin.gsub('_', '-')}-"\
-        "#{rand_str}-"\
-        "#{Socket.gethostname}"
+        name = "#{instance.name}-"\
+          "#{Etc.getlogin.gsub('_', '-')}-"\
+          "#{rand_str}-"\
+          "#{Socket.gethostname.split('.').first}"
+
+        # Ruby won't deal with hostnames longer than 64 characters, even on
+        # systems that technically support it, at least until
+        # <https://github.com/ruby/ruby/commit/73ac899b7f05d2473506cab815614bd75e01c3d2>
+        # makes it into the mainstream.
+        name[0...64]
       end
 
       private
