@@ -30,6 +30,14 @@ module Kitchen
     # @author Greg Fitzgerald <greg@gregf.org>
     class DigitalOcean < Kitchen::Driver::SSHBase
       IMAGES = {
+        "centos-5.8" => "centos-5-8-x64",
+        "centos-6.5" => "centos-6-5-x64",
+        "centos-7.0" => "centos-7-0-x64",
+        "debian-6.0" => "debian-6-0-x64",
+        "debian-7.0" => "debian-7-0-x64",
+        "fedora-19" => "fedora-19-x64",
+        "fedora-20" => "fedora-20-x64",
+        "ubuntu-10.04" => "ubuntu-10-04-x64",
         "ubuntu-12.04" => "ubuntu-12-04-x64",
         "ubuntu-14.04" => "ubuntu-14-04-x64",
       }
