@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'test-kitchen', '~> 1.0'
-  spec.add_dependency 'rest_client'
+  spec.add_dependency 'rest-client', '~> 1.7'
 
   spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'rake'
