@@ -117,7 +117,6 @@ module Kitchen
         # Generate what should be a unique server name
         rand_str = Array.new(8) { rand(36).to_s(36) }.join
         "#{instance.name}-"\
-        "#{Etc.getlogin.gsub('_', '-')}-"\
         "#{rand_str}-"\
         "#{Socket.gethostname}"
       end
